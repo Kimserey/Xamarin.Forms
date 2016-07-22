@@ -67,6 +67,8 @@ namespace Xamarin.Forms
 
 			Registrar.RegisterAll(new[] { typeof(ExportRendererAttribute), typeof(ExportCellAttribute), typeof(ExportImageSourceHandlerAttribute) });
 
+			Registrar.RegisterAll(new[] { typeof(NativeBindingConverterAttribute) });
+
 			s_isInitialized = true;
 			s_state = launchActivatedEventArgs.PreviousExecutionState;
 

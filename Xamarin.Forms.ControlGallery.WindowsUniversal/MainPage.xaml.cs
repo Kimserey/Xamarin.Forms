@@ -16,30 +16,42 @@ namespace Xamarin.Forms.ControlGallery.WindowsUniversal
 	/// An empty page that can be used on its own or navigated to within a Frame.
 	/// </summary>
 	public sealed partial class MainPage
-    {
-        public MainPage()
-        {
-            InitializeComponent();
+	{
+		public MainPage()
+		{
+			InitializeComponent();
 
-			var app = new Controls.App ();
+			var app = new Controls.App();
 
-			var mdp = app.MainPage as MasterDetailPage;
+			var nncgPage1 = app.MainPage as NativeBindingGalleryPage;
 
-			var detail = mdp?.Detail as NavigationPage;
-			if (detail != null) {
-				detail.Pushed += (sender, args) => {
-					var nncgPage = args.Page as NestedNativeControlGalleryPage;
+			if (nncgPage1 != null) {
+				AddNativeBindings(nncgPage1);
+			} else {
+				var mdp = app.MainPage as MasterDetailPage;
 
-					if (nncgPage != null) {
-						AddNativeControls (nncgPage);
-					}
-				};
-			} 
+				var detail = mdp?.Detail as NavigationPage;
+				if (detail != null) {
+					detail.Pushed += (sender, args) => {
+						var nncgPage = args.Page as NestedNativeControlGalleryPage;
 
-			LoadApplication (app);
-        }
+						if (nncgPage != null) {
+							AddNativeControls(nncgPage);
+						}
 
-		void AddNativeControls (NestedNativeControlGalleryPage page)
+						nncgPage1 = app.MainPage as NativeBindingGalleryPage;
+
+						if (nncgPage1 != null) {
+							AddNativeBindings(nncgPage1);
+						}
+					};
+				}
+
+			}
+			LoadApplication(app);
+		}
+
+		void AddNativeControls(NestedNativeControlGalleryPage page)
 		{
 			if (page.NativeControlsAdded) {
 				return;
@@ -52,16 +64,18 @@ namespace Xamarin.Forms.ControlGallery.WindowsUniversal
 			var textBlock = new TextBlock {
 				Text = originalText,
 				FontSize = 14,
-				FontFamily = new FontFamily ("HelveticaNeue")
+				FontFamily = new FontFamily("HelveticaNeue")
 			};
 
-			sl?.Children.Add (textBlock);
+			sl?.Children.Add(textBlock);
 
 			// Create and add a native Button 
 			var button = new Windows.UI.Xaml.Controls.Button { Content = "Toggle Font Size", Height = 80 };
-			button.Click += (sender, args) => { textBlock.FontSize = textBlock.FontSize == 14 ? 24 : 14; };
+			button.Click += (sender, args) => {
+				textBlock.FontSize = textBlock.FontSize == 14 ? 24 : 14;
+			};
 
-			sl?.Children.Add (button.ToView ());
+			sl?.Children.Add(button.ToView());
 
 			// Create a control which we know doesn't behave correctly with regard to measurement
 			var difficultControl = new BrokenNativeControl {
@@ -73,30 +87,30 @@ namespace Xamarin.Forms.ControlGallery.WindowsUniversal
 			};
 
 			// Add the misbehaving controls, one with a custom delegate for ArrangeOverrideDelegate
-			sl?.Children.Add (difficultControl);
-			sl?.Children.Add (difficultControl2,
+			sl?.Children.Add(difficultControl);
+			sl?.Children.Add(difficultControl2,
 				arrangeOverrideDelegate: (renderer, finalSize) => {
-					if (finalSize.Width <= 0 || double.IsInfinity (finalSize.Width)) {
+					if (finalSize.Width <= 0 || double.IsInfinity(finalSize.Width)) {
 						return null;
 					}
 
 					FrameworkElement frameworkElement = renderer.Control;
 
-					frameworkElement.Measure (finalSize);
+					frameworkElement.Measure(finalSize);
 
 					// The broken control always tries to size itself to the screen width
 					// So figure that out and we'll know how far off it's laying itself out
-					Rect bounds = ApplicationView.GetForCurrentView ().VisibleBounds;
-					double scaleFactor = DisplayInformation.GetForCurrentView ().RawPixelsPerViewPixel;
-					var screenWidth = new Size (bounds.Width * scaleFactor, bounds.Height * scaleFactor);
-					
+					Rect bounds = ApplicationView.GetForCurrentView().VisibleBounds;
+					double scaleFactor = DisplayInformation.GetForCurrentView().RawPixelsPerViewPixel;
+					var screenWidth = new Size(bounds.Width * scaleFactor, bounds.Height * scaleFactor);
+
 					// We can re-center it by offsetting it during the Arrange call
 					double diff = Math.Abs(screenWidth.Width - finalSize.Width) / -2;
-					frameworkElement.Arrange (new Rect (diff, 0, finalSize.Width - diff, finalSize.Height));
+					frameworkElement.Arrange(new Rect(diff, 0, finalSize.Width - diff, finalSize.Height));
 
 					// Arranging the control to the left will make it show up past the edge of the stack layout
 					// We can fix that by clipping it manually
-					var clip = new RectangleGeometry { Rect = new Rect (-diff, 0, finalSize.Width, finalSize.Height) };
+					var clip = new RectangleGeometry { Rect = new Rect(-diff, 0, finalSize.Width, finalSize.Height) };
 					frameworkElement.Clip = clip;
 
 					return finalSize;
@@ -105,5 +119,52 @@ namespace Xamarin.Forms.ControlGallery.WindowsUniversal
 
 			page.NativeControlsAdded = true;
 		}
-    }
+
+		void AddNativeBindings(NativeBindingGalleryPage page)
+		{
+			if (page.NativeControlsAdded) {
+				return;
+			}
+
+			StackLayout sl = page.Layout;
+
+			var txbLabel = new TextBlock {
+				FontSize = 14,
+				FontFamily = new FontFamily("HelveticaNeue")
+			};
+
+			var btnColor = new Windows.UI.Xaml.Controls.Button { Content = "Toggle Label Color", Height = 80 };
+			btnColor.Click += (sender, args) => {
+				txbLabel.Foreground = new SolidColorBrush(Windows.UI.Colors.Pink);
+			};
+
+			txbLabel.SetBinding("Text", new Binding("NativeLabel"));
+			txbLabel.SetBinding(() => txbLabel.Foreground, new Binding("NativeLabelColor",BindingMode.TwoWay));
+
+			sl?.Children.Add(txbLabel);
+			sl?.Children.Add(btnColor.ToView());
+			//			var colorPicker = new ColorPickerView(new CGRect(0, 0, 300, 300));
+
+			//			colorPicker.SetBinding(() => colorPicker.SelectedColor, new Binding("NativeLabelColor", BindingMode.TwoWay), "ColorPicked");
+
+
+			//			sl?.Children.Add(colorPicker);
+		
+			//			//this doesn't work with the linker on because there's no getter for TextColor
+			//			//uilabel.SetBinding("TextColor", new Binding("NativeLabelColor", BindingMode.TwoWay));
+
+			//			//this works with the linker providing a getter and setter
+			//			//uilabel.SetBinding(
+			//			//	nameof(uilabel.TextColor),
+			//			//	new Binding(nameof(NestedNativeControlGalleryPage.NestedNativeViewModel.NativeLabelColor)) { Mode = BindingMode.TwoWay },
+			//			//	(oldVal, newVal) => uilabel.TextColor = (UIColor)newVal,
+			//			//	() => uilabel.TextColor
+			//			//);
+
+
+
+			//			page.NativeControlsAdded = true;
+		}
+
+	}
 }
