@@ -90,8 +90,8 @@ namespace Xamarin.Forms.Platform.iOS
 			if (bindableNativeView != null)
 			{
 				bindableNativeView.UnApplyNativeBindings();
-				if (NativeBindingExtensions.NativeBindingPool.ContainsKey(Element.NativeView))
-					NativeBindingExtensions.NativeBindingPool.Remove(Element.NativeView);
+				if (FormsNativeBindingExtensions.NativeBindingPool.ContainsKey(Element.NativeView))
+					FormsNativeBindingExtensions.NativeBindingPool.Remove(Element.NativeView);
 			}
 		}
 	}

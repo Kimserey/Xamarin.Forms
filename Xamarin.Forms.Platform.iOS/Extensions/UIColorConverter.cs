@@ -4,12 +4,8 @@ using UIKit;
 
 namespace Xamarin.Forms.Platform.iOS
 {
-	public class UIColorConverter : IValueConverter
+	public class UIColorConverter : INativeValueConverter
 	{
-		public UIColorConverter()
-		{
-		}
-
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 		{
 			if (value is Color)
