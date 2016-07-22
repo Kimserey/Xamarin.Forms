@@ -18,8 +18,6 @@ namespace Xamarin.Forms
 		public string TargetPropertyName => targetProperty;
 		public string TargetEventName => targetEvent;
 
-		public List<Type> ParameterTypes => parameterPossibleTypes;
-
 		public BindableProxy(object target, PropertyInfo targetPropInfo, string eventName = null)
 		{
 			if (target == null)
@@ -78,23 +76,18 @@ namespace Xamarin.Forms
 		readonly PropertyInfo propInfo;
 		List<MethodInfo> setMethodsInfo;
 		List<MethodInfo> getMethodsInfo;
-		List<Type> parameterPossibleTypes;
-		IValueConverter nativeValueConverter;
+		List<Type> possibleParameterTypes;
+		INativeValueConverter nativeValueConverter;
 		Action<object, object> callbackSetValue;
 		Func<object> callbackGetValue;
 
 		void Init()
 		{
 			if (propInfo == null)
-				FindPossibleMethods(TargetPropertyName, TargetObjectType, out getMethodsInfo, out setMethodsInfo, out parameterPossibleTypes);
+				FindPossibleMethods(TargetPropertyName, TargetObjectType, out getMethodsInfo, out setMethodsInfo, out possibleParameterTypes);
 
 			Property = BindableProperty.Create(TargetPropertyName, typeof(object), typeof(BindableProxy), propertyChanged: (bo, o, n) => ((BindableProxy)bo).OnPropertyChanged(o, n));
-
-			var converter = Registrar.Registered.GetHandler(TargetPropertyType);
-			if (converter != null)
-				nativeValueConverter = converter as IValueConverter;
-			else
-				Log.Warning("NativeBinding", $"Converter not found for {TargetPropertyType}");
+			FindNativeValueConverter();
 		}
 
 		static void FindPossibleMethods(string targetProp, Type targetObjectType, out List<MethodInfo> gets, out List<MethodInfo> sets, out List<Type> parameterTypes)
@@ -127,6 +120,23 @@ namespace Xamarin.Forms
 				}
 
 			}
+		}
+
+		void FindNativeValueConverter()
+		{
+			if (TargetPropertyType != null)
+				nativeValueConverter = Registrar.Registered.GetHandler<INativeValueConverter>(TargetPropertyType);
+
+			if (nativeValueConverter == null && possibleParameterTypes != null)
+			{
+				foreach (var item in possibleParameterTypes)
+				{
+					nativeValueConverter = Registrar.Registered.GetHandler<INativeValueConverter>(item);
+				}
+			}
+
+			if (nativeValueConverter == null)
+				Log.Warning("NativeBinding", $"Converter not found for {TargetPropertyType}");
 		}
 
 		void OnPropertyChanged(object oldValue, object newValue)

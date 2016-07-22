@@ -3,12 +3,8 @@ using System.Globalization;
 
 namespace Xamarin.Forms.Platform.Android
 {
-	public class ColorConverter : IValueConverter
+	public class ColorConverter : INativeValueConverter
 	{
-		public ColorConverter()
-		{
-		}
-
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 		{
 			if (value is Color)

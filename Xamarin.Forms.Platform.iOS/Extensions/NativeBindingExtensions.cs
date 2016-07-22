@@ -23,13 +23,21 @@ namespace Xamarin.Forms.Platform.iOS
 		//this works better but maybe is slower
 		public static void SetBinding(this UIView self, Expression<Func<object>> memberLamda, Binding binding, string eventName)
 		{
-			var memberSelectorExpression = memberLamda.Body as MemberExpression;
-			if (memberSelectorExpression != null)
+			MemberExpression memberSelectorExpression = null;
+			memberSelectorExpression = memberLamda.Body as MemberExpression;
+			if (memberSelectorExpression == null)
 			{
-				var property = memberSelectorExpression.Member as PropertyInfo;
-				var proxy = new BindableProxy(self, property, eventName);
-				SetBinding(self, binding, proxy);
+				var unaryExpression = memberLamda.Body as UnaryExpression;
+				if (unaryExpression != null)
+				{
+					memberSelectorExpression = unaryExpression.Operand as MemberExpression;
+				}
 			}
+			if (memberSelectorExpression == null)
+				throw new ArgumentNullException(nameof(memberLamda));
+			var property = memberSelectorExpression.Member as PropertyInfo;
+			var proxy = new BindableProxy(self, property, eventName);
+			SetBinding(self, binding, proxy);
 		}
 
 		public static void SetBinding(this UIView self, string propertyName, Binding binding, Action<object, object> callback = null, Func<object> getter = null)

@@ -10,8 +10,6 @@ namespace Xamarin.Forms.Platform.Android
 {
 	public static class NativeBindingExtensions
 	{
-		internal static Dictionary<AView, Dictionary<BindableProxy, Binding>> NativeBindingPool = new Dictionary<AView, Dictionary<BindableProxy, Binding>>();
-
 		public static void SetBinding(this AView self, Expression<Func<object>> memberLamda, Binding binding)
 		{
 			SetBinding(self, memberLamda, binding, null);
@@ -39,61 +37,35 @@ namespace Xamarin.Forms.Platform.Android
 
 		public static void SetBinding(this AView self, string propertyName, Binding binding, Action<object, object> callback = null, Func<object> getter = null)
 		{
-			//var methodGetName = $"Get{propertyName}";
-
 			var proxy = new BindableProxy(self, propertyName, callback, getter);
 			SetBinding(self, binding, proxy);
 		}
 
 		static void SetBinding(AView view, Binding binding, BindableProxy bindableProxy)
 		{
-			FindConverter(binding, bindableProxy);
-
-			if (NativeBindingPool.ContainsKey(view))
+			if (FormsNativeBindingExtensions.NativeBindingPool.ContainsKey(view))
 			{
-				NativeBindingPool[view].Add(bindableProxy, binding);
+				FormsNativeBindingExtensions.NativeBindingPool[view].Add(bindableProxy, binding);
 			}
 			else
 			{
-				NativeBindingPool.Add(view, new Dictionary<BindableProxy, Binding> { { bindableProxy, binding } });
+				FormsNativeBindingExtensions.NativeBindingPool.Add(view, new Dictionary<BindableProxy, Binding> { { bindableProxy, binding } });
 			}
 		}
 
-		static void FindConverter(Binding binding, BindableProxy proxy)
-		{
-			if (binding.Converter != null)
-				return;
+		//foreach (var item in proxy.ParameterTypes)
+		//			{
+		//				if (binding.Converter != null)
+		//					break;
+		//				var shortName = item.Name.Split(new[] { '.' }).Last();
+		//				converterClassName = $"{assembly.GetName().Name}.{shortName}Converter";
+		//				var converter = assembly.CreateInstance(converterClassName) as IValueConverter;
+		//				if (converter != null)
+		//				{
+		//					binding.Converter = converter;
+		//				}
 
-			var assembly = Assembly.GetExecutingAssembly();
-			var converterClassName = string.Empty;
-			//this needs to be done upfront and cached.
-			if (proxy.TargetPropertyType != null)
-			{
-				converterClassName = $"{assembly.GetName().Name}.{proxy.TargetPropertyType.Name}Converter";
-				var converter = assembly.CreateInstance(converterClassName) as IValueConverter;
-				if (converter != null)
-					binding.Converter = converter;
-			}
-			else
-			{
-				if (proxy.ParameterTypes != null)
-				{
-					foreach (var item in proxy.ParameterTypes)
-					{
-						if (binding.Converter != null)
-							break;
-						var shortName = item.Name.Split(new[] { '.' }).Last();
-						converterClassName = $"{assembly.GetName().Name}.{shortName}Converter";
-						var converter = assembly.CreateInstance(converterClassName) as IValueConverter;
-						if (converter != null)
-						{
-							binding.Converter = converter;
-						}
-
-					}
-				}
-			}
-		}
+		//			}
 	}
 }
 

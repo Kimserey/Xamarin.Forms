@@ -15,11 +15,6 @@ namespace Xamarin.Forms.Platform.WinRT
 #endif
 
 {
-	public interface INativeValueConverter : IValueConverter, IRegisterable
-	{
-	};
-
-	//NativeBindingConverter()
 	public class ColorToBrushNativeBindingConverter : INativeValueConverter
 	{
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

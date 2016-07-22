@@ -5,7 +5,7 @@ using Xamarin.Forms.Internals;
 
 namespace Xamarin.Forms
 {
-	internal abstract class BindableNativeView : View, INativeViewBindableController
+	public abstract class BindableNativeView : View, INativeViewBindableController
 	{
 		protected BindableNativeView()
 		{
