@@ -50,7 +50,7 @@ namespace Xamarin.Forms.Platform.iOS
 			SizeThatFitsDelegate = sizeThatFitsDelegate;
 			LayoutSubViews = layoutSubViews;
 			NativeView = nativeView;
-			bindableProxies = new Dictionary<BindableProxy, Binding>()
+			bindableProxies = new Dictionary<BindableProxy, Binding>();
 		}
 
 		public GetDesiredSizeDelegate GetDesiredSizeDelegate { get; }
