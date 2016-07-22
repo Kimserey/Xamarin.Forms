@@ -18,8 +18,6 @@ namespace Xamarin.Forms.Platform.WinRT
 {
 	public static class NativeBindingExtensions
 	{
-		internal static Dictionary<object, Dictionary<BindableProxy, Binding>> NativeBindingPool => FormsNativeBindingExtensions.NativeBindingPool;
-
 		public static void SetBinding(this FrameworkElement self, Expression<Func<object>> memberLamda, Binding binding)
 		{
 			SetBinding(self, memberLamda, binding, null);
@@ -45,31 +43,14 @@ namespace Xamarin.Forms.Platform.WinRT
 
 		static void SetBinding(FrameworkElement view, Binding binding, BindableProxy bindableProxy)
 		{
-			FindConverter(binding, bindableProxy);
-
-			if (NativeBindingPool.ContainsKey(view))
+			if (FormsNativeBindingExtensions.NativeBindingPool.ContainsKey(view))
 			{
-				NativeBindingPool[view].Add(bindableProxy, binding);
+				FormsNativeBindingExtensions.NativeBindingPool[view].Add(bindableProxy, binding);
 			}
 			else
 			{
-				NativeBindingPool.Add(view, new Dictionary<BindableProxy, Binding> { { bindableProxy, binding } });
+				FormsNativeBindingExtensions.NativeBindingPool.Add(view, new Dictionary<BindableProxy, Binding> { { bindableProxy, binding } });
 			}
 		}
-
-		static void FindConverter(Binding binding, BindableProxy proxy)
-		{
-			if (binding.Converter != null)
-				return;
-
-			//this needs to be done upfront and cached.
-			//var assembly = Assembly.get
-			//var converterClassName = $"{assembly.GetName().Name}.{proxy.TargetPropertyType.Name}Converter";
-			//var converter = assembly.CreateInstance(converterClassName) as IValueConverter;
-			//if (converter != null)
-			//	binding.Converter = converter;
-		}
-
-
 	}
 }

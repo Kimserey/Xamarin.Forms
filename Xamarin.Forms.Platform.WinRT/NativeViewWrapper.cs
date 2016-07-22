@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Data;
-using Xamarin.Forms.Internals;
 
 #if WINDOWS_UWP
 
