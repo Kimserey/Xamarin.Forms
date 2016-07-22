@@ -10,19 +10,6 @@ namespace Xamarin.Forms
 {
 	internal class BindableProxy : BindableObject
 	{
-		readonly object targetObject;
-		readonly string targetProperty;
-		readonly string targetEvent;
-		readonly PropertyInfo propInfo;
-		List<MethodInfo> setMethodsInfo;
-		List<MethodInfo> getMethodsInfo;
-		List<Type> parameterPossibleTypes;
-
-		IValueConverter nativeValueConverter;
-
-		Action<object, object> callbackSetValue;
-		Func<object> callbackGetValue;
-
 		public BindableProperty Property;
 
 		public Type TargetPropertyType => propInfo?.PropertyType;
@@ -64,55 +51,7 @@ namespace Xamarin.Forms
 			Init();
 		}
 
-		void Init()
-		{
-			if (propInfo == null)
-				FindPossibleMethods(TargetPropertyName, TargetObjectType, out getMethodsInfo, out setMethodsInfo, out parameterPossibleTypes);
-
-			Property = BindableProperty.Create(TargetPropertyName, typeof(object), typeof(BindableProxy), propertyChanged: (bo, o, n) => ((BindableProxy)bo).OnPropertyChanged(o, n));
-
-			var converter = Registrar.Registered.GetHandler(TargetPropertyType);
-			if (converter != null)
-				nativeValueConverter = converter as IValueConverter;
-		}
-
-		static void FindPossibleMethods(string targetProp, Type targetObjectType, out List<MethodInfo> gets, out List<MethodInfo> sets, out List<Type> parameterTypes)
-		{
-			gets = new List<MethodInfo>();
-			sets = new List<MethodInfo>();
-			parameterTypes = new List<Type>();
-			var setMethodName = $"Set{targetProp}";
-			var getMethodName = $"Get{targetProp}";
-
-			foreach (var method in targetObjectType.GetRuntimeMethods()) {
-				System.Diagnostics.Debug.WriteLine(method);
-				if (method.DeclaringType != targetObjectType)
-					continue;
-
-				if (method.Name == setMethodName) {
-					sets.Add(method);
-					foreach (var parameter in method.GetParameters()) {
-						parameterTypes.Add(parameter.ParameterType);
-					}
-				}
-
-				if (method.Name == getMethodName) {
-					gets.Add(method);
-					parameterTypes.Add(method.ReturnType);
-				}
-
-			}
-		}
-
-		void OnPropertyChanged(object oldValue, object newValue)
-		{
-			if (callbackSetValue != null)
-				callbackSetValue(oldValue, newValue);
-			else
-				SetTargetValue(newValue);
-		}
-
-		internal void OnTargetPropertyChanged(object valueFromNative = null, IValueConverter converter = null)
+		public void OnTargetPropertyChanged(object valueFromNative = null)
 		{
 			object convertedValue = null;
 			//this comes converted, or not.. 
@@ -133,6 +72,71 @@ namespace Xamarin.Forms
 			SetValueCore(Property, finalValue);
 		}
 
+		readonly object targetObject;
+		readonly string targetProperty;
+		readonly string targetEvent;
+		readonly PropertyInfo propInfo;
+		List<MethodInfo> setMethodsInfo;
+		List<MethodInfo> getMethodsInfo;
+		List<Type> parameterPossibleTypes;
+		IValueConverter nativeValueConverter;
+		Action<object, object> callbackSetValue;
+		Func<object> callbackGetValue;
+
+		void Init()
+		{
+			if (propInfo == null)
+				FindPossibleMethods(TargetPropertyName, TargetObjectType, out getMethodsInfo, out setMethodsInfo, out parameterPossibleTypes);
+
+			Property = BindableProperty.Create(TargetPropertyName, typeof(object), typeof(BindableProxy), propertyChanged: (bo, o, n) => ((BindableProxy)bo).OnPropertyChanged(o, n));
+
+			var converter = Registrar.Registered.GetHandler(TargetPropertyType);
+			if (converter != null)
+				nativeValueConverter = converter as IValueConverter;
+			else
+				Log.Warning("NativeBinding", $"Converter not found for {TargetPropertyType}");
+		}
+
+		static void FindPossibleMethods(string targetProp, Type targetObjectType, out List<MethodInfo> gets, out List<MethodInfo> sets, out List<Type> parameterTypes)
+		{
+			gets = new List<MethodInfo>();
+			sets = new List<MethodInfo>();
+			parameterTypes = new List<Type>();
+			var setMethodName = $"Set{targetProp}";
+			var getMethodName = $"Get{targetProp}";
+
+			foreach (var method in targetObjectType.GetRuntimeMethods())
+			{
+				System.Diagnostics.Debug.WriteLine(method);
+				if (method.DeclaringType != targetObjectType)
+					continue;
+
+				if (method.Name == setMethodName)
+				{
+					sets.Add(method);
+					foreach (var parameter in method.GetParameters())
+					{
+						parameterTypes.Add(parameter.ParameterType);
+					}
+				}
+
+				if (method.Name == getMethodName)
+				{
+					gets.Add(method);
+					parameterTypes.Add(method.ReturnType);
+				}
+
+			}
+		}
+
+		void OnPropertyChanged(object oldValue, object newValue)
+		{
+			if (callbackSetValue != null)
+				callbackSetValue(oldValue, newValue);
+			else
+				SetTargetValue(newValue);
+		}
+
 		void SetTargetValue(object value)
 		{
 			if (value == null)
@@ -142,7 +146,6 @@ namespace Xamarin.Forms
 
 			if (!wasSet)
 				throw new InvalidCastException($"Can't bind properties of different types. The target property is {TargetPropertyType}, and the value is {value.GetType()}");
-
 		}
 
 		bool TrySetValueOnTarget(object value)
@@ -152,7 +155,7 @@ namespace Xamarin.Forms
 
 			if (nativeValueConverter != null)
 				convertedValue = nativeValueConverter.Convert(value, TargetPropertyType, null, CultureInfo.CurrentUICulture);
-		
+
 			if (propInfo != null)
 				wasSet = SetPropertyInfo(convertedValue ?? value);
 
@@ -174,20 +177,22 @@ namespace Xamarin.Forms
 				return ReadGetMethodInfo();
 
 			return null;
-
 		}
 
 		bool SetSetMethodInfo(object value)
 		{
 			bool wasSet = false;
 
-			foreach (var setMethod in setMethodsInfo) {
-				try {
+			foreach (var setMethod in setMethodsInfo)
+			{
+				try
+				{
 					setMethod.Invoke(targetObject, new object[] { value });
 					wasSet = true;
 					break;
 				}
-				catch (ArgumentException) {
+				catch (ArgumentException)
+				{
 					System.Diagnostics.Debug.WriteLine("Failed to convert");
 				}
 			}
@@ -197,14 +202,17 @@ namespace Xamarin.Forms
 
 		object ReadGetMethodInfo()
 		{
-			foreach (var getMethod in getMethodsInfo) {
-				try {
+			foreach (var getMethod in getMethodsInfo)
+			{
+				try
+				{
 					var possibleValue = getMethod.Invoke(targetObject, new object[] { });
 					if (possibleValue != null)
 						return possibleValue;
 					break;
 				}
-				catch (Exception ex) {
+				catch (Exception ex)
+				{
 					throw (ex);
 				}
 			}
@@ -213,7 +221,8 @@ namespace Xamarin.Forms
 
 		object ReadPropertyInfo()
 		{
-			if (!propInfo.CanRead) {
+			if (!propInfo.CanRead)
+			{
 				System.Diagnostics.Debug.WriteLine($"No GetMethod found for {TargetPropertyName}");
 				return null;
 			}
@@ -227,7 +236,8 @@ namespace Xamarin.Forms
 			if (!TargetPropertyType.IsAssignableFrom(value.GetType()))
 				return false;
 
-			if (!propInfo.CanWrite) {
+			if (!propInfo.CanWrite)
+			{
 				System.Diagnostics.Debug.WriteLine($"No SetMethod found for {TargetPropertyName}");
 				return false;
 			}

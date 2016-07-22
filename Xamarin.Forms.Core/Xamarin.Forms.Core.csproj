@@ -415,10 +415,14 @@
     <Compile Include="IApplicationController.cs" />
     <Compile Include="IAppIndexingProvider.cs" />
     <Compile Include="ListStringTypeConverter.cs" />
-    <Compile Include="BindableProxy.cs" />
     <Compile Include="INativeViewBindableController.cs" />
     <Compile Include="Internals\NativeViewEventListener.cs" />
     <Compile Include="Internals\NativeViewEventFiredEventArgs.cs" />
+    <Compile Include="INativeValueConverter.cs" />
+    <Compile Include="NativeBindingConverterAttribute.cs" />
+    <Compile Include="Internals\FormsNativeBindingExtensions.cs" />
+    <Compile Include="Internals\BindableNativeView.cs" />
+    <Compile Include="Internals\BindableProxy.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>
